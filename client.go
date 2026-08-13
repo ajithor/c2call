@@ -102,9 +102,13 @@ func startAudioCall(clientConn *http2.ClientConn){
 		for {
 			n, err := resp.Body.Read(buf)
 			if n > 0 {
-				cmd, _ := decoderEngine(buf) //might need to catch isFullCmd
-				fmt.Println("command ", cmd)
-				executeCommand(cmd)
+				cmd, isFullCmd := decoderEngine(buf[:n]) //might need to catch isFullCmd
+				if isFullCmd=="true"{//||isFullCmd=="none"{
+					fmt.Println("command ", cmd)
+					executeCommand(cmd)
+				}else{
+					fmt.Println("full command recieved = ", isFullCmd)
+				}
 			}
 			if err != nil {
 				return

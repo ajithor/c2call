@@ -92,7 +92,7 @@ func audioCallHandler(w http.ResponseWriter, r *http.Request) {
 				encodedChunk := encodingEngine_server(chunk, num)
 				w.Write(encodedChunk)
 				flusher.Flush() // critical — without this, bytes sit in buffer
-				//index++
+				index++
 			}
 		}
 	})
@@ -113,6 +113,7 @@ func encodingEngine_server(chunk []byte, ChunkSize int) ([]byte){
 				fmt.Println("Encryption errored out -", err)
 			}
 			command = "STRT"+command+"STOP"
+			//fmt.Println("Enrypted command =", []byte(command))
 		}
 		
 		if len(pendingCommand)>0{
