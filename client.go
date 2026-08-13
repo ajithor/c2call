@@ -49,7 +49,10 @@ func dialH2()(*http2.ClientConn, error){
 	fmt.Println("client: h2 negotiated via uTLS")
 
 	//http2 transport over uTLS conn
-	transport := &http2.Transport{}
+	transport := &http2.Transport{
+		ChromeCompatConfig: http2.ChromeCompatConfig{Enabled: true},
+	}
+	//transport := &http2.Transport{}
 	clientConn, err := transport.NewClientConn(uConn)
 	if err != nil {
 		fmt.Println("http2 NewClientConn:", err)
@@ -98,7 +101,7 @@ func startAudioCall(clientConn *http2.ClientConn){
 		ticker := time.NewTicker(5 * time.Millisecond)
 		defer ticker.Stop()
 		for {
-			select{
+			select{ //need case for when server closes conn
 			case <-ticker.C:
 				num:=0
 				chunk := make([]byte, ChunkSize)
