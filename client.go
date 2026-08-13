@@ -81,9 +81,12 @@ func startAudioCall(clientConn *http2.ClientConn){
 	if err != nil {
 		log.Fatal("new request:", err)
 	}
-	req.Header.Set("Content-Type", "text/plain")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"+
-		" AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	req.Header.Set("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")
+	req.Header.Set("accept", "*/*")
+	req.Header.Set("accept-encoding", "gzip, deflate, br, zstd")
+	req.Header.Set("accept-language", "en-US,en;q=0.9")
+	req.Header.Set("content-type", "audio/wav")
+	req.Header.Set("priority", "u=1, i")
 
 	// RoundTrip sends request headers and returns once response headers arrive
 	// pr keeps streaming request body data to server after this returns

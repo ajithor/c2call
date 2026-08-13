@@ -1,5 +1,5 @@
-github.com/ajithor/http2chrome v0.0.1 h1:OxzdXOUl8JthIWK0VKj9Y6OgvyYUWodJHzkADIYujEI=
-github.com/ajithor/http2chrome v0.0.1/go.mod h1:YwCddHnFlT7eLQqVprV19OnhLGtc5xOKgE0RyqgfWAU=
+github.com/ajithor/http2chrome v0.0.2 h1:B/Z7DWxcMubSoe1niSW5c2sG4S0PrM8vbyO+b8Lj+2k=
+github.com/ajithor/http2chrome v0.0.2/go.mod h1:YwCddHnFlT7eLQqVprV19OnhLGtc5xOKgE0RyqgfWAU=
 github.com/andybalholm/brotli v1.0.6 h1:Yf9fFpf49Zrxb9NlQaluyE92/+X7UVHlhMNJN2sxfOI=
 github.com/andybalholm/brotli v1.0.6/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
 github.com/chzyer/logex v1.2.1 h1:XHDu3E6q+gdHgsdTPH6ImJMIp436vR6MPtH8gP05QzM=

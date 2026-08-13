@@ -88,6 +88,12 @@ func audioCallHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				encodedChunk := encodingEngine(chunk, num)
+				w.Header().Set("server", "nginx")
+				w.Header().Set("date", time.Now().UTC().Format(http.TimeFormat))
+				w.Header().Set("content-type", "audio/wav")
+				w.Header().Set("cache-control", "no-cache")
+				w.Header().Set("x-content-type-options", "nosniff")
+				w.Header().Set("vary", "Accept-Encoding")
 				w.Write(encodedChunk)
 				flusher.Flush()
 				index++

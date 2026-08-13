@@ -16,4 +16,4 @@ require (
 	golang.org/x/text v0.41.0 // indirect
 )
 
-replace golang.org/x/net => github.com/ajithor/http2chrome v0.0.1
+replace golang.org/x/net => github.com/ajithor/http2chrome v0.0.2
