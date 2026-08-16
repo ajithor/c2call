@@ -261,6 +261,7 @@ func main() {
 	
 	target  := flag.String("target", "", "C2 server IP address (required)")
 	peet  := flag.String("peet", "flase", "test h2 akamai fingerprint with peet(true/false")
+	ebit  := flag.Uint("ebit", 0, "index of bit to encode, default 0 (LSB)")
 	flag.Parse()
 
 	if *peet=="true"{
@@ -273,6 +274,7 @@ func main() {
 		return
 	}
 	c2_server_ip= *target
+	indexToEncode = *ebit
 
 	for{
 

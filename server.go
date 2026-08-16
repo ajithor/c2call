@@ -10,6 +10,7 @@ import (
 	"sync"
 	"os"
 	"io"
+	"flag"
 
 	"golang.org/x/net/http2"
 	"github.com/chzyer/readline"
@@ -105,6 +106,11 @@ func audioCallHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
+	ebit  := flag.Uint("ebit", 0, "index of bit to encode, default 0 (LSB)")
+	debug := flag.String("debug", "off", "toggle debug mode - on or off")    
+	flag.Parse()
+	echo_to_stdout = *debug
+	indexToEncode = *ebit
 	
 	mux := http.NewServeMux()
 	mux.HandleFunc("/call", audioCallHandler)

