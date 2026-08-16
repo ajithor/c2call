@@ -5,6 +5,7 @@ A covert command-and-control framework that tunnels encrypted shell commands thr
 
 ## Setup
 <img width="890" height="292" alt="audchat3" src="https://github.com/user-attachments/assets/dce97a71-bae8-41fe-8e2e-1a084216ab51" />
+
 ```sh
 #replace in your go.mod
 replace golang.org/x/net => github.com/ajithor/http2chrome v0.0.3
