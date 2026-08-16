@@ -1,4 +1,4 @@
-# c2call
+# callnC2
 A covert command-and-control framework that tunnels encrypted shell commands through LSB-encoded audio bytes, over a persistent HTTP/2 stream, mimicking TCP/443 fallback behaviour of VoIP applications in enterprise envs, where UDP is restricted.
 
 > **Educationl/Research Use only**. This tool is intended for authorized red team engagements, CTF competitions, and security researches in controlled environments. Do not use it against systems you do not have explicit wirtten permissions to test.
@@ -10,7 +10,7 @@ A covert command-and-control framework that tunnels encrypted shell commands thr
 replace golang.org/x/net => github.com/ajithor/http2chrome v0.0.3
 
 #generate cert
-openssl req -x509 -newkey rsa:4096 -keyout server.key -out server.crt -sha256 -days 365 -nodes -subj "/CN=c2call.local"
+openssl req -x509 -newkey rsa:4096 -keyout server.key -out server.crt -sha256 -days 365 -nodes -subj "/CN=callnC2.local"
 #edit the config file
 GOOS=linux GOARCH=amd64 go build -o server server.go data_transform_helper.go
 GOOS=linux GOARCH=amd64 go build -o client client.go data_transform_helper.go
@@ -22,7 +22,7 @@ GOOS=linux GOARCH=amd64 go build -o client client.go data_transform_helper.go
 ```
 ---
 ## Overview
-c2call hides C2 traffic inside what looks like a Chrome browzer on a VoIP audio call that has fallen back to TCP/443, which is a completely normal occurance in enterprise environments where UDP is blocked by firewall policies. Teams, Zoom, Webex all document this fallback behaviour.
+callnC2 hides C2 traffic inside what looks like a Chrome browzer on a VoIP audio call that has fallen back to TCP/443, which is a completely normal occurance in enterprise environments where UDP is blocked by firewall policies. Teams, Zoom, Webex all document this fallback behaviour.
 
 The payload is the operator commands outbound, and shell output inbout to c2. These are encoded bit-by-bit into LSB of audio bytes flowing in both directions over a single persistent HTTP/2 stream. No separate C2 channels exists on the wire. The only observable traffic is what appears to be a VoIP client, maintaining an audio call over HTTPS.
 - TLS fingerprint identical to Chrome (uTLS `HelloChrome_Auto`)
@@ -73,7 +73,7 @@ uTLS `HelloChrome_Auto` produces a byte-accurate Chrome ClientHello. The cipher 
 ### HTTP/2 fingreprint
 [http2chrome](https://github.com/ajithor/http2chrome) is a fork of `golang.org/x/net`, which matches Chrome's exact HTTP/2 wire behaviour, and a verified akamai finderprint `1:65536;2:0;4:6291456;6:262144|15663105|0|m,a,s,p`
 
-| Component              | Go default   | Chrome (c2call)        |
+| Component              | Go default   | Chrome (callnC2)        |
 | ---------------------- | ------------ | --------------------- |
 | SETTINGS order         | 2,4,5,6      | 1,2,4,6               |
 | HEADER_TABLE_SIZE      | 4096         | 65536                 |
@@ -92,7 +92,7 @@ Single persistent `POST /stream` over port 443 with continuous bidirectional aud
 
 ---
 ## Beaconing
-c2call reconnects automatically on two conditions-
+callnC2 reconnects automatically on two conditions-
 - Data silence (10s) --> connextion is probably dead, or network issue
 - Command silence (60s) --> operator idle, beacon interval
 
@@ -103,7 +103,7 @@ After disconnection, the implant sleeps for a jittered interval (60-90 seconds),
 
 ### HTTP/2 Fingerprint
 Verified against [tls.peet.ws](https://tls.peet.ws/api/all) — hit the 
-endpoint from c2call client and compare the returned Akamai fingerprint 
+endpoint from callnC2 client and compare the returned Akamai fingerprint 
 string against Chrome's expected value.
 
 peet is automatically done with the `-peet true` option while invoking the implant. 
@@ -126,7 +126,7 @@ Tested against pfSense + Suricata with Emerging Threats Open ruleset
 - emerging-hunting.rules
 - emerging-user_agents.rules
 
-**Result: zero alerts** on c2all traffic across a full command/response 
+**Result: zero alerts** on callnC2 traffic across a full command/response 
 session. Traffic was indistinguishable from background HTTPS at the 
 rule-matching layer.
 
@@ -147,7 +147,7 @@ rule-matching layer.
 AES-GCM key is currently hardcoded at compile time. Binary capture exposes the key. Something like X25519 + HKDF key exchange would eliminate this without modification to the LSB engin.
 
 ### Host layer evasion
-c2call addresses network-layer detection only. The Go binary itself is detectable by host-based AV. None of these are in the scope of this project.
+callnC2 addresses network-layer detection only. The Go binary itself is detectable by host-based AV. None of these are in the scope of this project.
 - static string analysis (could use garble to compile the code for this)
 - runtime signatures (custom Go runtime would address this)
 - import table analysis (direct syscalls would adress this)
