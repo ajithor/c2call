@@ -4,7 +4,7 @@ A covert command-and-control framework that tunnels encrypted shell commands thr
 > **Educationl/Research Use only**. This tool is intended for authorized red team engagements, CTF competitions, and security researches in controlled environments. Do not use it against systems you do not have explicit wirtten permissions to test.
 
 ## Setup
-
+<img width="890" height="292" alt="audchat3" src="https://github.com/user-attachments/assets/dce97a71-bae8-41fe-8e2e-1a084216ab51" />
 ```sh
 #replace in your go.mod
 replace golang.org/x/net => github.com/ajithor/http2chrome v0.0.3
